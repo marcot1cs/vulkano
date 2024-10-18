@@ -2,7 +2,6 @@ use crate::{App, RenderContext};
 use std::{slice, sync::Arc};
 use vulkano::{
     buffer::{Buffer, BufferContents, BufferCreateInfo, BufferUsage},
-    device::DeviceOwned,
     image::Image,
     memory::allocator::{AllocationCreateInfo, DeviceLayout, MemoryTypeFilter},
     pipeline::{
@@ -15,7 +14,7 @@ use vulkano::{
             viewport::ViewportState,
             GraphicsPipelineCreateInfo,
         },
-        DynamicState, GraphicsPipeline, PipelineLayout, PipelineShaderStageCreateInfo,
+        DynamicState, GraphicsPipeline, PipelineShaderStageCreateInfo,
     },
     render_pass::Subpass,
 };
@@ -84,13 +83,15 @@ impl SceneTask {
         }
     }
 
-    pub fn create_pipeline(&mut self, pipeline_layout: &Arc<PipelineLayout>, subpass: Subpass) {
+    pub fn create_pipeline(&mut self, app: &App, subpass: Subpass) {
+        let bcx = app.resources.bindless_context().unwrap();
+
         let pipeline = {
-            let vs = vs::load(pipeline_layout.device().clone())
+            let vs = vs::load(app.device.clone())
                 .unwrap()
                 .entry_point("main")
                 .unwrap();
-            let fs = fs::load(pipeline_layout.device().clone())
+            let fs = fs::load(app.device.clone())
                 .unwrap()
                 .entry_point("main")
                 .unwrap();
@@ -99,9 +100,10 @@ impl SceneTask {
                 PipelineShaderStageCreateInfo::new(vs),
                 PipelineShaderStageCreateInfo::new(fs),
             ];
+            let layout = bcx.pipeline_layout_from_stages(&stages).unwrap();
 
             GraphicsPipeline::new(
-                pipeline_layout.device().clone(),
+                app.device.clone(),
                 None,
                 GraphicsPipelineCreateInfo {
                     stages: stages.into_iter().collect(),
@@ -116,7 +118,7 @@ impl SceneTask {
                     )),
                     dynamic_state: [DynamicState::Viewport].into_iter().collect(),
                     subpass: Some(subpass.into()),
-                    ..GraphicsPipelineCreateInfo::new(pipeline_layout.clone())
+                    ..GraphicsPipelineCreateInfo::new(layout)
                 },
             )
             .unwrap()

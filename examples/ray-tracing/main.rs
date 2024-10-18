@@ -148,7 +148,7 @@ impl App {
 
         let queue = queues.next().unwrap();
 
-        let resources = Resources::new(&device, &Default::default());
+        let resources = Resources::new(&device, &Default::default()).unwrap();
 
         let flight_id = resources.create_flight(MAX_FRAMES_IN_FLIGHT).unwrap();
 
