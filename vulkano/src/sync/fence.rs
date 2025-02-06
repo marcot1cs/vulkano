@@ -25,6 +25,7 @@
 //!
 //! [`submit`]: crate::device::QueueGuard::submit
 
+use ash::vk;
 use crate::{
     device::{physical::PhysicalDevice, Device, DeviceOwned},
     instance::InstanceOwnedDebugWrapper,
@@ -49,7 +50,7 @@ use std::{
 /// host.
 #[derive(Debug)]
 pub struct Fence {
-    handle: ash::vk::Fence,
+    handle: vk::Fence,
     device: InstanceOwnedDebugWrapper<Arc<Device>>,
     id: NonZeroU64,
 
@@ -159,7 +160,7 @@ impl Fence {
     #[inline]
     pub unsafe fn from_handle(
         device: Arc<Device>,
-        handle: ash::vk::Fence,
+        handle: vk::Fence,
         create_info: FenceCreateInfo,
     ) -> Fence {
         let FenceCreateInfo {
@@ -198,8 +199,8 @@ impl Fence {
         let fns = self.device.fns();
         let result = unsafe { (fns.v1_0.get_fence_status)(self.device.handle(), self.handle) };
         match result {
-            ash::vk::Result::SUCCESS => Ok(true),
-            ash::vk::Result::NOT_READY => Ok(false),
+            vk::Result::SUCCESS => Ok(true),
+            vk::Result::NOT_READY => Ok(false),
             err => Err(VulkanError::from(err)),
         }
     }
@@ -221,13 +222,13 @@ impl Fence {
                 self.device.handle(),
                 1,
                 &self.handle,
-                ash::vk::TRUE,
+                vk::TRUE,
                 timeout_ns,
             )
         };
 
         match result {
-            ash::vk::Result::SUCCESS => Ok(()),
+            vk::Result::SUCCESS => Ok(()),
             err => Err(VulkanError::from(err)),
         }
     }
@@ -300,14 +301,14 @@ impl Fence {
                     device.handle(),
                     fences_vk.len() as u32,
                     fences_vk.as_ptr(),
-                    ash::vk::TRUE, // TODO: let the user choose false here?
+                    vk::TRUE, // TODO: let the user choose false here?
                     timeout_ns,
                 )
             }
         };
 
         match result {
-            ash::vk::Result::SUCCESS => Ok(()),
+            vk::Result::SUCCESS => Ok(()),
             err => Err(VulkanError::from(err)),
         }
     }
@@ -460,7 +461,7 @@ impl Fence {
         &self,
         handle_type: ExternalFenceHandleType,
     ) -> Result<File, VulkanError> {
-        let info_vk = ash::vk::FenceGetFdInfoKHR::default()
+        let info_vk = vk::FenceGetFdInfoKHR::default()
             .fence(self.handle)
             .handle_type(handle_type.into());
 
@@ -508,7 +509,7 @@ impl Fence {
     pub fn export_win32_handle(
         &self,
         handle_type: ExternalFenceHandleType,
-    ) -> Result<ash::vk::HANDLE, Validated<VulkanError>> {
+    ) -> Result<vk::HANDLE, Validated<VulkanError>> {
         self.validate_export_win32_handle(handle_type)?;
 
         Ok(unsafe { self.export_win32_handle_unchecked(handle_type) }?)
@@ -561,8 +562,8 @@ impl Fence {
     pub unsafe fn export_win32_handle_unchecked(
         &self,
         handle_type: ExternalFenceHandleType,
-    ) -> Result<ash::vk::HANDLE, VulkanError> {
-        let info_vk = ash::vk::FenceGetWin32HandleInfoKHR::default()
+    ) -> Result<vk::HANDLE, VulkanError> {
+        let info_vk = vk::FenceGetWin32HandleInfoKHR::default()
             .fence(self.handle)
             .handle_type(handle_type.into());
 
@@ -745,7 +746,7 @@ impl Future for Fence {
 }
 
 unsafe impl VulkanObject for Fence {
-    type Handle = ash::vk::Fence;
+    type Handle = vk::Fence;
 
     #[inline]
     fn handle(&self) -> Self::Handle {
@@ -869,14 +870,14 @@ impl FenceCreateInfo {
     pub(crate) fn to_vk<'a>(
         &self,
         extensions_vk: &'a mut FenceCreateInfoExtensionsVk,
-    ) -> ash::vk::FenceCreateInfo<'a> {
+    ) -> vk::FenceCreateInfo<'a> {
         let &Self {
             flags,
             export_handle_types: _,
             _ne: _,
         } = self;
 
-        let mut val_vk = ash::vk::FenceCreateInfo::default().flags(flags.into());
+        let mut val_vk = vk::FenceCreateInfo::default().flags(flags.into());
 
         let FenceCreateInfoExtensionsVk { export_vk } = extensions_vk;
 
@@ -895,7 +896,7 @@ impl FenceCreateInfo {
         } = self;
 
         let export_vk = (!export_handle_types.is_empty()).then(|| {
-            ash::vk::ExportFenceCreateInfo::default().handle_types(export_handle_types.into())
+            vk::ExportFenceCreateInfo::default().handle_types(export_handle_types.into())
         });
 
         FenceCreateInfoExtensionsVk { export_vk }
@@ -903,7 +904,7 @@ impl FenceCreateInfo {
 }
 
 pub(crate) struct FenceCreateInfoExtensionsVk {
-    pub(crate) export_vk: Option<ash::vk::ExportFenceCreateInfo<'static>>,
+    pub(crate) export_vk: Option<vk::ExportFenceCreateInfo<'static>>,
 }
 
 vulkan_bitflags! {
@@ -1061,8 +1062,8 @@ impl ImportFenceFdInfo {
 
     pub(crate) fn into_vk(
         self,
-        fence_vk: ash::vk::Fence,
-    ) -> ash::vk::ImportFenceFdInfoKHR<'static> {
+        fence_vk: vk::Fence,
+    ) -> vk::ImportFenceFdInfoKHR<'static> {
         let ImportFenceFdInfo {
             flags,
             handle_type,
@@ -1082,7 +1083,7 @@ impl ImportFenceFdInfo {
             -1
         };
 
-        ash::vk::ImportFenceFdInfoKHR::default()
+        vk::ImportFenceFdInfoKHR::default()
             .fence(fence_vk)
             .flags(flags.into())
             .handle_type(handle_type.into())
@@ -1107,7 +1108,7 @@ pub struct ImportFenceWin32HandleInfo {
     /// The file to import the fence from.
     ///
     /// The default value is `0`, which must be overridden.
-    pub handle: ash::vk::HANDLE,
+    pub handle: vk::HANDLE,
 
     pub _ne: crate::NonExhaustive,
 }
@@ -1174,8 +1175,8 @@ impl ImportFenceWin32HandleInfo {
 
     pub(crate) fn to_vk(
         &self,
-        fence_vk: ash::vk::Fence,
-    ) -> ash::vk::ImportFenceWin32HandleInfoKHR<'static> {
+        fence_vk: vk::Fence,
+    ) -> vk::ImportFenceWin32HandleInfoKHR<'static> {
         let &Self {
             flags,
             handle_type,
@@ -1183,7 +1184,7 @@ impl ImportFenceWin32HandleInfo {
             _ne: _,
         } = self;
 
-        ash::vk::ImportFenceWin32HandleInfoKHR::default()
+        vk::ImportFenceWin32HandleInfoKHR::default()
             .fence(fence_vk)
             .flags(flags.into())
             .handle_type(handle_type.into())
@@ -1231,13 +1232,13 @@ impl ExternalFenceInfo {
         Ok(())
     }
 
-    pub(crate) fn to_vk(&self) -> ash::vk::PhysicalDeviceExternalFenceInfo<'static> {
+    pub(crate) fn to_vk(&self) -> vk::PhysicalDeviceExternalFenceInfo<'static> {
         let &Self {
             handle_type,
             _ne: _,
         } = self;
 
-        ash::vk::PhysicalDeviceExternalFenceInfo::default().handle_type(handle_type.into())
+        vk::PhysicalDeviceExternalFenceInfo::default().handle_type(handle_type.into())
     }
 }
 
@@ -1264,12 +1265,12 @@ pub struct ExternalFenceProperties {
 }
 
 impl ExternalFenceProperties {
-    pub(crate) fn to_mut_vk() -> ash::vk::ExternalFenceProperties<'static> {
-        ash::vk::ExternalFenceProperties::default()
+    pub(crate) fn to_mut_vk() -> vk::ExternalFenceProperties<'static> {
+        vk::ExternalFenceProperties::default()
     }
 
-    pub(crate) fn from_vk(val_vk: &ash::vk::ExternalFenceProperties<'_>) -> Self {
-        let &ash::vk::ExternalFenceProperties {
+    pub(crate) fn from_vk(val_vk: &vk::ExternalFenceProperties<'_>) -> Self {
+        let &vk::ExternalFenceProperties {
             export_from_imported_handle_types,
             compatible_handle_types,
             external_fence_features,
@@ -1278,9 +1279,9 @@ impl ExternalFenceProperties {
 
         ExternalFenceProperties {
             exportable: external_fence_features
-                .intersects(ash::vk::ExternalFenceFeatureFlags::EXPORTABLE),
+                .intersects(vk::ExternalFenceFeatureFlags::EXPORTABLE),
             importable: external_fence_features
-                .intersects(ash::vk::ExternalFenceFeatureFlags::IMPORTABLE),
+                .intersects(vk::ExternalFenceFeatureFlags::IMPORTABLE),
             export_from_imported_handle_types: export_from_imported_handle_types.into(),
             compatible_handle_types: compatible_handle_types.into(),
         }

@@ -1,3 +1,4 @@
+use ash::vk;
 use crate::{
     buffer::{BufferContents, BufferUsage, IndexBuffer, Subbuffer},
     command_buffer::{auto::SetOrPush, sys::RecordingCommandBuffer, AutoCommandBufferBuilder},
@@ -1018,7 +1019,7 @@ impl RecordingCommandBuffer {
         unsafe {
             (fns.v1_0.cmd_bind_pipeline)(
                 self.handle(),
-                ash::vk::PipelineBindPoint::COMPUTE,
+                vk::PipelineBindPoint::COMPUTE,
                 pipeline.handle(),
             )
         };
@@ -1069,7 +1070,7 @@ impl RecordingCommandBuffer {
         unsafe {
             (fns.v1_0.cmd_bind_pipeline)(
                 self.handle(),
-                ash::vk::PipelineBindPoint::GRAPHICS,
+                vk::PipelineBindPoint::GRAPHICS,
                 pipeline.handle(),
             )
         };
@@ -1120,7 +1121,7 @@ impl RecordingCommandBuffer {
         unsafe {
             (fns.v1_0.cmd_bind_pipeline)(
                 self.handle(),
-                ash::vk::PipelineBindPoint::RAY_TRACING_KHR,
+                vk::PipelineBindPoint::RAY_TRACING_KHR,
                 pipeline.handle(),
             )
         };
@@ -1605,7 +1606,7 @@ impl RecordingCommandBuffer {
             .zip(&mut writes_extensions_vk)
             .map(|((write, write_info_vk), write_extension_vk)| {
                 write.to_vk(
-                    ash::vk::DescriptorSet::null(),
+                    vk::DescriptorSet::null(),
                     set_layout_bindings[&write.binding()].descriptor_type,
                     write_info_vk,
                     write_extension_vk,

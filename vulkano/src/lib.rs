@@ -119,7 +119,8 @@
 //! [`vulkano-macros`]: vulkano_macros
 //! [`serde`]: https://crates.io/crates/serde
 
-pub use ash::vk::Handle;
+use ash::vk;
+pub use vk::Handle;
 use bytemuck::{Pod, Zeroable};
 pub use extensions::ExtensionProperties;
 pub use half;
@@ -167,13 +168,13 @@ pub mod sync;
 
 /// Represents memory size and offset values on a Vulkan device.
 /// Analogous to the Rust `usize` type on the host.
-pub use ash::vk::DeviceSize;
+pub use vk::DeviceSize;
 
 /// A [`DeviceSize`] that is known not to equal zero.
 pub type NonZeroDeviceSize = NonZeroU64;
 
 /// Represents an address (pointer) on a Vulkan device.
-pub use ash::vk::DeviceAddress;
+pub use vk::DeviceAddress;
 
 /// A [`DeviceAddress`] that is known not to equal zero.
 pub type NonNullDeviceAddress = NonZeroU64;
@@ -188,8 +189,8 @@ pub struct StridedDeviceAddressRegion {
 
 impl StridedDeviceAddressRegion {
     #[doc(hidden)]
-    pub fn to_vk(&self) -> ash::vk::StridedDeviceAddressRegionKHR {
-        ash::vk::StridedDeviceAddressRegionKHR {
+    pub fn to_vk(&self) -> vk::StridedDeviceAddressRegionKHR {
+        vk::StridedDeviceAddressRegionKHR {
             device_address: self.device_address,
             stride: self.stride,
             size: self.size,

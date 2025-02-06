@@ -1,3 +1,4 @@
+use ash::vk;
 use crate::{
     buffer::{BufferUsage, Subbuffer},
     command_buffer::{
@@ -1042,7 +1043,7 @@ impl RecordingCommandBuffer {
                 destination.buffer().handle(),
                 destination.offset(),
                 stride,
-                ash::vk::QueryResultFlags::from(flags) | T::FLAG,
+                vk::QueryResultFlags::from(flags) | T::FLAG,
             )
         };
 
